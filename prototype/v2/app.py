@@ -7,6 +7,7 @@ from gensim.models import KeyedVectors
 from gensim.test.utils import datapath
 from MUSE_util import *
 from s2_sqlite_util import *
+from flask import g
 
 app = Flask(__name__)
 
@@ -108,37 +109,58 @@ def query(src=None, word=None, tgt=None):
 
 @app.route('/query-ctx/<src>/<tgt>/<word>')
 def query_ctx(src=None, word=None, tgt=None):
+    # get MUSE aligned embeddings
     src_emb = MUSE_emb[src][tgt]["src_emb"]
     tgt_emb = MUSE_emb[src][tgt]["tgt_emb"]
 
-    con, cur = get_db_con_cur()
+    # get sqlite db connection
+    con, cur = get_db_con_cur("C:/Users/orina/Downloads/psy+eng+hci+mgmt.in_out_1.s2orc.20200705v1.db")
+    """
+    con = getattr(g, '_database', None)
+    if con is None:
+        con, cur = get_db_con_cur()
+    else:
+        cur = con.cursor()
+    """
 
-    query_result = {"word": word}
+    query_result = {"word": word, "src_sim": None, "tgt_sim": None}
     src_sim_list = word_most_similar_same_emb(src_emb, word)
-
-    src_res = []
-    for w, sim in src_sim_list:     
-        #paper_sent_id_list = get_paper_sent_id_contain_word(cur, word, community=src)
-        ctx_list = get_ctx_by_word(cur, w, src)
-        src_res.append({'word': w, 'sim': sim, 'ctx': process_ctx_list(ctx_list)})
-    query_result["src_sim"] = src_res
+    if src_sim_list is None:
+        query_result["err_code"] = "NOT_FOUND_IN_SRC_VOCAB"
+        query_result["err_msg"] = "query word not found in source vocabulary"
+        #return jsonify(query_result)
+    else:
+        src_res = []
+        for w, sim in src_sim_list:     
+            #paper_sent_id_list = get_paper_sent_id_contain_word(cur, word, community=src)
+            ctx_list = get_ctx_by_word(cur, w, src)
+            src_res.append({'word': w, 'sim': sim, 'ctx': process_ctx_list(ctx_list)})
+        query_result["src_sim"] = src_res
 
     tgt_sim_list = word_most_similar_same_emb(tgt_emb, word)
-    tgt_res = []
-    for w, sim in tgt_sim_list:     
-        ctx_list = get_ctx_by_word(cur, w, tgt)
-        tgt_res.append({'word': w, 'sim': sim, 'ctx': process_ctx_list(ctx_list)})
-    query_result["tgt_sim"] = tgt_res
+    if tgt_sim_list is None:
+        query_result["err_code"] = "NOT_FOUND_IN_TGT_VOCAB"
+        query_result["err_msg"] = "query word not found in target vocabulary"
+        #return jsonify(query_result)
+    else:
+        tgt_res = []
+        for w, sim in tgt_sim_list:     
+            ctx_list = get_ctx_by_word(cur, w, tgt)
+            tgt_res.append({'word': w, 'sim': sim, 'ctx': process_ctx_list(ctx_list)})
+        query_result["tgt_sim"] = tgt_res
 
     cross_sim_list = src_word_most_similar_in_tgt(src_emb, tgt_emb, word)
-    cross_res = []
-    for w, sim in cross_sim_list:     
-        ctx_list = get_ctx_by_word(cur, w, tgt)
-        cross_res.append({'word': w, 'sim': sim, 'ctx': process_ctx_list(ctx_list)})
-    query_result["cross_sim"] = cross_res
-    
+    if cross_sim_list is None:
+        pass
+    else:
+        cross_res = []
+        for w, sim in cross_sim_list:     
+            ctx_list = get_ctx_by_word(cur, w, tgt)
+            cross_res.append({'word': w, 'sim': sim, 'ctx': process_ctx_list(ctx_list)})
+        query_result["cross_sim"] = cross_res
+        
     query_result["self_rank"], query_result["self_sim"] = src_word_rank_sim_in_tgt(src_emb, tgt_emb, word)
-    
+        
     return jsonify(query_result)
 
 

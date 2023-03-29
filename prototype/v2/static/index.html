@@ -27,7 +27,10 @@
             </div>
           </div>
           <div id="src-result-card" class="card invisible">
-            <div class="card-body" id="src-description-card">
+            <div id="src-not-found-card" class="card-body visually-hidden">
+              Your query term <span id="word-not-found-in-src" class="badge text-bg-success">q_s</span> is not found in the corpus of the <span id="not-found-in-src-community" class="border rounded border-success px-1">your Home Community</span> community.
+            </div>
+            <div id="src-description-card" class="card-body">
               These terms are closest to your query term <span id="word-in-src" class="badge text-bg-success">q_s</span> in <span id="src-community" class="border rounded border-success px-1">your Home Community</span>:
               <br>
               (If they don't make sense to you, our model may not be doing a good job.)
@@ -54,7 +57,7 @@
             </div>
           </div>
           <div id="cross-result-card" class="card invisible">
-            <div class="card-body" id="cross-description-card">
+            <div id="cross-description-card" class="card-body">
               People in <span id="tgt-community-cross" class="border rounded border-primary px-1">Target Community</span> may use a different term when they talk about something conceptually close to <span id="word-in-cross" class="badge text-bg-success">q_s</span>. We don't even know if such a term exists! But these may be close...
             </div>
             <ul id="cross-list" class="list-group list-group-flush vh-100" style="overflow: auto;">
@@ -62,7 +65,7 @@
               <li class="list-group-item"><span class="badge text-bg-primary">t2</span> 0.5234</li>
               <li class="list-group-item"><span class="badge text-bg-primary">t3</span> 0.4893</li>
             </ul>
-            <div class="card-body" id="self-sim-card">
+            <div id="self-sim-card" class="card-body visually-hidden">
               <span id="self-src-word-span" class="badge text-bg-primary">q_t</span> is the <span id="self-rank-span" class="text-bg-light">x</span>-th closest target terms to <span id="self-tgt-word-span" class="badge text-bg-success">q_s</span> (closeness score: <span id="self-sim-span" class="text-bg-light px-2">x.xx</span>)
             </div>
           </div>
@@ -84,7 +87,10 @@
             </div>
           </div>
           <div id="tgt-result-card" class="card invisible">
-            <div class="card-body" id="tgt-description-card">
+            <div id="tgt-not-found-card" class="card-body visually-hidden">
+              The query term <span id="word-not-found-in-tgt" class="badge text-bg-primary">q_s</span> is not found in the corpus of the <span id="not-found-in-tgt-community" class="border rounded border-primary px-1">the Target Community</span> community.
+            </div>
+            <div id="tgt-description-card" class="card-body">
               These terms are closest to <span id="word-in-tgt" class="badge text-bg-primary">q_t</span> in <span id="tgt-community" class="border rounded border-primary px-1">Target Community</span>:
               <br>
               (You may see how the same term is used differently by the other community.)

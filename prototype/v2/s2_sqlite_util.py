@@ -1,18 +1,39 @@
 import sqlite3
 
-def get_db_con_cur():
-	con = sqlite3.connect("G:/My Drive/OASIS/analogy/psy+eng+hci+mgmt.in_out_1.s2orc.20200705v1.db")
+def get_db_con_cur(db_path="G:/My Drive/OASIS/analogy/psy+eng+hci+mgmt.in_out_1.s2orc.20200705v1.db"):
+	con = sqlite3.connect(db_path)
+	#con = sqlite3.connect(':memory:')
 	con.row_factory = sqlite3.Row
 	cur = con.cursor()
 	return con, cur
 
 def get_ctx_by_word(cur, word, community):
+	"""
 	sql = '''SELECT DISTINCT paper.paper_id, paper.title, paper.authors_json, paper.year, nltk_tok.sent_id, nltk_sent.sent, nltk_sent.section FROM nltk_tok
 		INNER JOIN nltk_sent ON nltk_tok.sent_id = nltk_sent.rowid
 		INNER JOIN paper ON nltk_tok.paper_id = paper.paper_id
 		WHERE nltk_tok.tok = ? AND paper.community = ?
 		LIMIT 1000;'''
-	cur.execute(sql, (word, community))
+	"""
+	"""
+	sql = '''SELECT paper.paper_id, paper.title, paper.authors_json, paper.year, nltk_tok.sent_id, nltk_sent.sent, nltk_sent.section FROM nltk_tok
+		INNER JOIN nltk_sent ON nltk_tok.sent_id = nltk_sent.rowid
+		INNER JOIN paper ON nltk_tok.paper_id = paper.paper_id
+		WHERE nltk_tok.tok = ? AND paper.community = ?
+		GROUP BY paper.paper_id, nltk_sent.section
+		LIMIT 100;'''
+	"""
+	"""
+	sql = '''SELECT paper.paper_id, paper.title, paper.authors_json, paper.year, nltk_tok.sent_id, nltk_sent.sent, nltk_sent.section FROM nltk_tok
+		INNER JOIN nltk_sent ON nltk_tok.sent_id = nltk_sent.rowid
+		INNER JOIN paper ON nltk_tok.paper_id = paper.paper_id
+		WHERE nltk_tok.tok_lower = ? AND paper.community = ?
+		LIMIT 100;'''
+	"""
+	sql = '''SELECT paper_id, title, authors_json, year, sent_id, sent, section FROM tok_lower_ctx
+		WHERE tok_lower = ? AND community = ?
+		LIMIT 100;'''
+	cur.execute(sql, (word.lower(), community))
 	return [{k: row[k] for k in row.keys()} for row in cur.fetchall()]
 
 def get_paper_sent_id_contain_word(cur, word, community=None):

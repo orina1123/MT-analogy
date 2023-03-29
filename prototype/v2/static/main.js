@@ -18,7 +18,7 @@ d3.select("#query-button").on("click",
 		console.log(src, tgt, word);
 
 		/*** clear elements ***/
-		clear_lists();
+		reset_result_panels();
 		
 		/*d3.select("#src-result-card").classed("invisible", true);
 		d3.select("#tgt-result-card").classed("invisible", true);
@@ -56,168 +56,197 @@ d3.select("#query-button").on("click",
 			.then(function(response){
 				console.log(response);
 
-				//clear_lists();
 				d3.selectAll(".spinner-align-div").remove();
 
 				/* *_[s] most similar to word_[s] */
 				d3.select("#word-in-src").text(response["word"]);
 				d3.select("#src-community").text(srcName);
 
-				var srcLi = d3.select("#src-list").selectAll("li")
-					.data(response['src_sim'])
-					.enter()
-					.append("li")
-					.classed("list-group-item m-1", true);
-					/*.style("background-color", function(d){ 
-						var sim = +d['sim'];
-						var colorStr = d3.interpolateReds(sim); 
-						return colorStr.replace("rgb", "rgba").replace(")", ", " + (sim*0.8) + ")");
-					});*/
+				if(response['src_sim'] == null){
+					d3.select("#word-not-found-in-src").text(response["word"]);
+					d3.select("#not-found-in-src-community").text(srcName);
+					d3.select("#src-not-found-card").classed("visually-hidden", false);
+				} else {
+					var srcLi = d3.select("#src-list").selectAll("li")
+						.data(response['src_sim'])
+						.enter()
+						.append("li")
+						.classed("list-group-item m-1", true);
+						/*.style("background-color", function(d){ 
+							var sim = +d['sim'];
+							var colorStr = d3.interpolateReds(sim); 
+							return colorStr.replace("rgb", "rgba").replace(")", ", " + (sim*0.8) + ")");
+						});*/
 
-				srcLi.append("span")
-					.classed("badge text-bg-success", true)
-					.text(function(d){ return d['word']; });
-				/*
-				srcLi.append("span")
-					.classed("mx-3 px-2", true)
-					.classed("text-bg-light", true)
-					.text(function(d){ return d['sim'].toFixed(4); });
-				*/
-				srcLi.append("a")
-					.classed("badge rounded-pill text-bg-secondary", true)
-					.attr("data-bs-toggle", "collapse")
-					.attr("data-bs-target", (d, i) => "#src-ctx-" + i)
-					.attr("aria-expanded", "false")
-					.attr("aria-controls", (d, i) => "src-ctx-" + i)
-					.style("float", "right")
-					.text("Toggle context")
-				srcLi.append("div")
-					.classed("collapse", true).attr("id", (d, i) => "src-ctx-" + i)
-					.append("ul").selectAll("li")
-					.data(function(d){ 
-						var d_ctx = d['ctx'];
-						d_ctx.forEach(function(ctx){
-							ctx['sim_word'] = d['word'];
+					srcLi.append("span")
+						.classed("badge text-bg-success", true)
+						.text(function(d){ return d['word']; });
+					/*
+					srcLi.append("span")
+						.classed("mx-3 px-2", true)
+						.classed("text-bg-light", true)
+						.text(function(d){ return d['sim'].toFixed(4); });
+					*/
+					srcLi.append("a")
+						.classed("badge rounded-pill text-bg-secondary", true)
+						.attr("data-bs-toggle", "collapse")
+						.attr("data-bs-target", (d, i) => "#src-ctx-" + i)
+						.attr("aria-expanded", "false")
+						.attr("aria-controls", (d, i) => "src-ctx-" + i)
+						.style("float", "right")
+						.text("Toggle context")
+					srcLi.append("div")
+						.classed("collapse", true).attr("id", (d, i) => "src-ctx-" + i)
+						.append("ul").selectAll("li")
+						.data(function(d){ 
+							var d_ctx = d['ctx'];
+							d_ctx.forEach(function(ctx){
+								ctx['sim_word'] = d['word'];
+							});
+							return d_ctx;
+						})
+						.enter()
+						.append("li")
+						.append("span")
+						.html(function(d){
+							return build_ctx_item_html(d);
 						});
-						return d_ctx;
-					})
-					.enter()
-					.append("li")
-					.append("span")
-					.html(function(d){
-						return build_ctx_item_html(d);
-					});
-
+					
+					d3.select("#src-description-card").classed("visually-hidden", false)
+					d3.select("#src-list").classed("visually-hidden", false)
+					d3.select("#src-result-card").classed("invisible", false);	
+				}
+				
 
 				/* *_[t] most similar to word_[t] */
 				d3.select("#word-in-tgt").text(response["word"])
 				d3.select("#tgt-community").text(tgtName);
-
-				var tgtLi = d3.select("#tgt-list").selectAll("li")
-					.data(response['tgt_sim'])
-					.enter()
-					.append("li")
-					.classed("list-group-item m-1", true);
-					/*.style("background-color", function(d){ 
-						var colorStr = d3.interpolateReds(+d['sim']); 
-						return colorStr.replace("rgb", "rgba").replace(")", ", 0.6)");
-					});*/
-				tgtLi.append("span")
-					.classed("badge text-bg-primary", true)
-					.text(function(d){ return d['word']; });
-				/*
-				tgtLi.append("span")
-					.classed("mx-3 px-2", true)
-					.classed("text-bg-light", true)
-					.text(function(d){ return d['sim'].toFixed(4); });
-				*/
-				tgtLi.append("a")
-					.classed("badge rounded-pill text-bg-secondary", true)
-					.attr("data-bs-toggle", "collapse")
-					.attr("data-bs-target", (d, i) => "#tgt-ctx-" + i)
-					.attr("aria-expanded", "false")
-					.attr("aria-controls", (d, i) => "tgt-ctx-" + i)
-					.style("float", "right")
-					.text("Toggle context")
-				tgtLi.append("div")
-					.classed("collapse", true).attr("id", (d, i) => "tgt-ctx-" + i)
-					.append("ul").selectAll("li")
-					.data(function(d){ 
-						var d_ctx = d['ctx'];
-						d_ctx.forEach(function(ctx){
-							ctx['sim_word'] = d['word'];
+				if(response['tgt_sim'] == null){
+					d3.select("#word-not-found-in-tgt").text(response["word"]);
+					d3.select("#not-found-in-tgt-community").text(tgtName);
+					d3.select("#tgt-not-found-card").classed("visually-hidden", false);
+				} else {
+					var tgtLi = d3.select("#tgt-list").selectAll("li")
+						.data(response['tgt_sim'])
+						.enter()
+						.append("li")
+						.classed("list-group-item m-1", true);
+						/*.style("background-color", function(d){ 
+							var colorStr = d3.interpolateReds(+d['sim']); 
+							return colorStr.replace("rgb", "rgba").replace(")", ", 0.6)");
+						});*/
+					tgtLi.append("span")
+						.classed("badge text-bg-primary", true)
+						.text(function(d){ return d['word']; });
+					/*
+					tgtLi.append("span")
+						.classed("mx-3 px-2", true)
+						.classed("text-bg-light", true)
+						.text(function(d){ return d['sim'].toFixed(4); });
+					*/
+					tgtLi.append("a")
+						.classed("badge rounded-pill text-bg-secondary", true)
+						.attr("data-bs-toggle", "collapse")
+						.attr("data-bs-target", (d, i) => "#tgt-ctx-" + i)
+						.attr("aria-expanded", "false")
+						.attr("aria-controls", (d, i) => "tgt-ctx-" + i)
+						.style("float", "right")
+						.text("Toggle context")
+					tgtLi.append("div")
+						.classed("collapse", true).attr("id", (d, i) => "tgt-ctx-" + i)
+						.append("ul").selectAll("li")
+						.data(function(d){ 
+							var d_ctx = d['ctx'];
+							d_ctx.forEach(function(ctx){
+								ctx['sim_word'] = d['word'];
+							});
+							return d_ctx;
+						})
+						.enter()
+						.append("li")
+						.append("span")
+						.html(function(d){
+							return build_ctx_item_html(d);
 						});
-						return d_ctx;
-					})
-					.enter()
-					.append("li")
-					.append("span")
-					.html(function(d){
-						return build_ctx_item_html(d);
-					});
+
+					d3.select("#tgt-description-card").classed("visually-hidden", false);
+					d3.select("#tgt-list").classed("visually-hidden", false);
+					d3.select("#tgt-result-card").classed("invisible", false);
+				}
 
 				/* *_[t] most similar to word_[s] */
-				d3.select("#word-in-cross").text(response["word"])
-				d3.select("#tgt-community-cross").text(tgtName);
+				if(response['cross_sim'] == null){
+				} else {
+					d3.select("#word-in-cross").text(response["word"])
+					d3.select("#tgt-community-cross").text(tgtName);
 
-				var xLi = d3.select("#cross-list").selectAll("li")
-					.data(response['cross_sim'])
-					.enter()
-					.append("li")
-					.classed("list-group-item m-1", true);
-					/*.style("background-color", function(d){ 
-						var colorStr = d3.interpolateReds(+d['sim']); 
-						return colorStr.replace("rgb", "rgba").replace(")", ", 0.6)");
-					});*/
-				xLi.append("span")
-					.classed("badge text-bg-primary", true)
-					.text(function(d){ return d['word']; });
-				/*
-				xLi.append("span")
-					.classed("mx-3 px-2", true)
-					.classed("text-bg-light", true)
-					.text(function(d){ return d['sim'].toFixed(4); });
-				*/
-				xLi.append("a")
-					.classed("badge rounded-pill text-bg-secondary", true)
-					.attr("data-bs-toggle", "collapse")
-					.attr("data-bs-target", (d, i) => "#cross-ctx-" + i)
-					.attr("aria-expanded", "false")
-					.attr("aria-controls", (d, i) => "cross-ctx-" + i)
-					.style("float", "right")
-					.text("Toggle context")
-				xLi.append("div")
-					.classed("collapse", true).attr("id", (d, i) => "cross-ctx-" + i)
-					.append("ul").selectAll("li")
-					.data(function(d){ 
-						var d_ctx = d['ctx'];
-						d_ctx.forEach(function(ctx){
-							ctx['sim_word'] = d['word'];
+					var xLi = d3.select("#cross-list").selectAll("li")
+						.data(response['cross_sim'])
+						.enter()
+						.append("li")
+						.classed("list-group-item m-1", true);
+						/*.style("background-color", function(d){ 
+							var colorStr = d3.interpolateReds(+d['sim']); 
+							return colorStr.replace("rgb", "rgba").replace(")", ", 0.6)");
+						});*/
+					xLi.append("span")
+						.classed("badge text-bg-primary", true)
+						.text(function(d){ return d['word']; });
+					/*
+					xLi.append("span")
+						.classed("mx-3 px-2", true)
+						.classed("text-bg-light", true)
+						.text(function(d){ return d['sim'].toFixed(4); });
+					*/
+					xLi.append("a")
+						.classed("badge rounded-pill text-bg-secondary", true)
+						.attr("data-bs-toggle", "collapse")
+						.attr("data-bs-target", (d, i) => "#cross-ctx-" + i)
+						.attr("aria-expanded", "false")
+						.attr("aria-controls", (d, i) => "cross-ctx-" + i)
+						.style("float", "right")
+						.text("Toggle context")
+					xLi.append("div")
+						.classed("collapse", true).attr("id", (d, i) => "cross-ctx-" + i)
+						.append("ul").selectAll("li")
+						.data(function(d){ 
+							var d_ctx = d['ctx'];
+							d_ctx.forEach(function(ctx){
+								ctx['sim_word'] = d['word'];
+							});
+							return d_ctx;
+						})
+						.enter()
+						.append("li")
+						.append("span")
+						.html(function(d){
+							return build_ctx_item_html(d);
 						});
-						return d_ctx;
-					})
-					.enter()
-					.append("li")
-					.append("span")
-					.html(function(d){
-						return build_ctx_item_html(d);
-					});
+					d3.select("#cross-description-card").classed("visually-hidden", false);
+					d3.select("#cross-list").classed("visually-hidden", false);
+					d3.select("#cross-result-card").classed("invisible", false);
+				}
 
 				/* self similarity & rank */
-				d3.select("#self-src-word-span").text(response["word"])
+				/*d3.select("#self-src-word-span").text(response["word"])
 				d3.select("#self-tgt-word-span").text(response["word"])
 				d3.select("#self-rank-span").text((+response["self_rank"])+1)
-				d3.select("#self-sim-span").text(response["self_sim"].toFixed(4))
+				d3.select("#self-sim-span").text(response["self_sim"].toFixed(4))*/
 
 				/*** show all lists ***/
-				show_lists();
+				//show_lists();
 			});
 	});
 
-function clear_lists() {
+function reset_result_panels() {
 	d3.select("#src-list").selectAll("*").remove();
 	d3.select("#tgt-list").selectAll("*").remove();
 	d3.select("#cross-list").selectAll("*").remove();
+
+	d3.select("#src-not-found-card").classed("visually-hidden", true);
+	d3.select("#tgt-not-found-card").classed("visually-hidden", true);
+
+	d3.selectAll(".spinner-align-div").remove();
 }
 
 function show_lists() {
@@ -242,6 +271,11 @@ function build_ctx_item_html(d) {
 	//console.log(d['authors_json']);
 	var first_author_last_name = JSON.parse(d['authors_json'])[0]['last'];
 	var paper_info_html = '[<a target="_blank" href="https://api.semanticscholar.org/CorpusID:' + d['paper_id'] + '">' + first_author_last_name + " et al. " + d['year'] + "</a>, " + d['section'] + "]";
-	return paper_info_html + "&nbsp;" + d['sent'].split(w).join("<mark>" + w + "</mark>");
-	//FIXME better word matching
+	//var sent_html = d['sent'].split(w).join("<mark>" + w + "</mark>");
+	var w_match_regex = new RegExp("\\b" + w + "\\b", "gi");
+	//var w_match_regex = new RegExp(w, "gi");
+	/*console.log(w_match_regex);*/
+	var sent_html = d['sent'].replace(w_match_regex, function(match){ /*console.log(match);*/ return "<mark>" + match + "</mark>"; });
+
+	return paper_info_html + "&nbsp;" + sent_html;	
 }
